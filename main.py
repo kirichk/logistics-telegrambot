@@ -135,7 +135,7 @@ def main():
         logger.info('Stopped')
     elif mode == "prod":
         updater.start_webhook(listen="0.0.0.0",
-                              url_path=TOKEN)
+                              url_path=token)
         updater.bot.set_webhook("https://{}.herokuapp.com/{}".format(HEROKU_APP_NAME, TOKEN))
 
 
