@@ -23,6 +23,7 @@ logger = logging.getLogger(__name__)
 mode = os.getenv("MODE")
 token = os.getenv('TOKEN')
 HEROKU_APP_NAME = os.getenv('HEROKU_APP_NAME')
+PORT = int(os.environ.get("PORT", "8443"))
 
 (PHONE, NAME, ROLE , OWNERSHIP, COMPANY_NAME, ID_CODE,
 MENU, MENU_CHOICE, STARTPOINT, ENDPOINT, WEIGHT, MILEAGE, WEIGHT_LIMITATIONS,
@@ -135,6 +136,7 @@ def main():
         logger.info('Stopped')
     elif mode == "prod":
         updater.start_webhook(listen="0.0.0.0",
+                              port=PORT,
                               url_path=token)
         updater.bot.set_webhook("https://{}.herokuapp.com/{}".format(HEROKU_APP_NAME, TOKEN))
 
