@@ -138,7 +138,7 @@ def main():
         updater.start_webhook(listen="0.0.0.0",
                               port=PORT,
                               url_path=token)
-        updater.bot.set_webhook("https://{}.herokuapp.com/{}".format(HEROKU_APP_NAME, TOKEN))
+        updater.bot.set_webhook("https://{}.herokuapp.com/{}".format(HEROKU_APP_NAME, token))
 
 
 if __name__ == '__main__':
