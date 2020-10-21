@@ -20,8 +20,8 @@ from tools.additional_handlers import cancel_handler, echo_handler
 
 logger = logging.getLogger(__name__)
 
-mode = os.getenv("MODE")
-token = os.getenv('TOKEN')
+MODE = os.getenv("MODE")
+TOKEN = os.getenv('TOKEN')
 HEROKU_APP_NAME = os.getenv('HEROKU_APP_NAME')
 PORT = int(os.environ.get("PORT", "8443"))
 
@@ -41,7 +41,7 @@ def main():
         con_pool_size=8,
     )
     bot = Bot(
-        token=token,
+        token=TOKEN,
         request=req,
     )
     updater = Updater(
@@ -133,15 +133,15 @@ def main():
     updater.dispatcher.add_handler(MessageHandler(Filters.all, echo_handler))
 
     # Начать бесконечную обработку входящих сообщений
-    if mode == "dev":
+    if MODE == "dev":
         updater.start_polling()
         updater.idle()
         logger.info('Stopped')
-    elif mode == "prod":
+    elif MODE == "prod":
         updater.start_webhook(listen="0.0.0.0",
                               port=PORT,
-                              url_path=token)
-        updater.bot.set_webhook("https://{}.herokuapp.com/{}".format(HEROKU_APP_NAME, token))
+                              url_path=TOKEN)
+        updater.bot.set_webhook("https://{}.herokuapp.com/{}".format(HEROKU_APP_NAME, TOKEN))
 
 
 if __name__ == '__main__':

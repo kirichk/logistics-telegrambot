@@ -552,7 +552,7 @@ def confirmation_handler(update: Update, context: CallbackContext):
                             reply_markup=inline_buttons,)
     except IndexError:
         pass
-    context.bot.send_message(chat_id=GROUP,
+    context.bot.send_message(chat_id=ADMIN,
                             text=f'Новая заявка!\nПункт погрузки: {startpoint}\n'\
                             f'Пункт выгрузки: {endpoint}\n'\
                             f'Расстояние: {mileage}км\n'\
