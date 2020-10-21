@@ -1,7 +1,5 @@
 import sqlite3
 from sqlite3 import Error
-from time import sleep, ctime
-
 
 def post_sql_query(sql_query):
     with sqlite3.connect('my.db') as connection:
@@ -33,7 +31,8 @@ def create_orders_table():
                         carrier_username TEXT,
                         status TEXT,
                         weight_limitations TEXT,
-                        mileage TEXT);'''
+                        mileage TEXT,
+                        reg_date TEXT);'''
     post_sql_query(orders_query)
 
 
@@ -52,7 +51,7 @@ def create_users_table():
 
 
 def register_user(username, full_name, role, ownership,
-                    company_name, id_code, phone, chat_id):
+                    company_name, id_code, phone, chat_id, reg_date):
     user_check_query = f'SELECT * FROM USERS WHERE username = "{username}";'
     user_check_data = post_sql_query(user_check_query)
 
@@ -61,19 +60,21 @@ def register_user(username, full_name, role, ownership,
                             f'ownership, company_name, id_code, phone, chat_id, '\
                             f'reg_date) VALUES ("{username}", "{full_name}", '\
                             f'"{role}", "{ownership}", "{company_name}", '\
-                            f'"{id_code}", "{phone}", "{chat_id}", "{ctime()}");'
+                            f'"{id_code}", "{phone}", "{chat_id}", "{reg_date}");'
         post_sql_query(insert_to_db_query)
 
 
 def register_order(username, startpoint, endpoint, weight,
                     cargo_type, start_date, price, payment_type,
-                    carrier_username, status, weight_limitations, mileage):
+                    carrier_username, status, weight_limitations,
+                    mileage, reg_date):
     insert_to_db_query = f'INSERT INTO ORDERS (username, startpoint, '\
                         f'endpoint, weight, cargo_type, start_date, price, '\
                         f'payment_type, carrier_username, status, '\
-                        f'weight_limitations, mileage) VALUES ("{username}", '\
+                        f'weight_limitations, mileage, reg_date) '\
+                        f'VALUES ("{username}", '\
                         f'"{startpoint}", "{endpoint}", "{weight}", '\
                         f'"{cargo_type}", "{start_date}", "{price}", '\
                         f'"{payment_type}", "{carrier_username}", "{status}", '\
-                        f'"{weight_limitations}", "{mileage}");'
+                        f'"{weight_limitations}", "{mileage}", "{reg_date}");'
     post_sql_query(insert_to_db_query)

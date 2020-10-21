@@ -14,7 +14,7 @@ from handlers import (start_buttons_handler, phone_handler, name_handler,
                             weight_limitations_handler, mileage_handler,
                             cargo_handler, calendar_handler, price_handler, payment_handler,
                             confirmation_handler, order_acception_handler,
-                            done_orders_handler)
+                            done_orders_handler, confirmed_orders_handler)
 from tools.additional_handlers import cancel_handler, echo_handler
 
 
@@ -66,6 +66,9 @@ def main():
                                     pass_user_data=True),
             CallbackQueryHandler(done_orders_handler,
                                     pattern=r'(done).[0-9]+',
+                                    pass_user_data=True),
+            CallbackQueryHandler(confirmed_orders_handler,
+                                    pattern=r'(confirm).[0-9]+',
                                     pass_user_data=True),
             CallbackQueryHandler(menu_handler,
                                     pattern=r'(menu)',
