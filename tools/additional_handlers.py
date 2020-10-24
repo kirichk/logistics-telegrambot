@@ -5,7 +5,7 @@ from tools.validators import logger_factory
 
 
 logger = logging.getLogger(__name__)
-
+GROUP = os.getenv("GROUP")
 debug_requests = logger_factory(logger=logger)
 
 
@@ -19,6 +19,9 @@ def cancel_handler(update: Update, context: CallbackContext):
 
 @debug_requests
 def echo_handler(update: Update, context: CallbackContext):
-    update.message.reply_text(
-        'Нажмите /start для заполнения анкеты!',
-    )
+    if update.message.update.message.chat.id != GROUP:
+        update.message.reply_text(
+            'Нажмите /start для заполнения анкеты!',
+        )
+    else:
+        pass
