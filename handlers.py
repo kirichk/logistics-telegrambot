@@ -17,10 +17,10 @@ from tools.calendar import telegramcalendar
 from datetime import datetime, timedelta
 
 
-
 logger = logging.getLogger(__name__)
 ADMIN = os.getenv("ADMIN")
 GROUP = os.getenv("GROUP")
+TG_APP_NAME = os.getenv('TG_APP_NAME')
 debug_requests = logger_factory(logger=logger)
 
 (PHONE, NAME, ROLE , OWNERSHIP, COMPANY_NAME, ID_CODE,
@@ -513,13 +513,15 @@ def confirmation_handler(update: Update, context: CallbackContext):
                     mileage=mileage,
                     reg_date=now.strftime("%m/%d/%Y, %H:%M:%S"))
 
+    order_id = post_sql_query(f'SELECT order_id FROM ORDERS WHERE username ='\
+                                f' "{current_user}"')[-1][0]
     inline_buttons = InlineKeyboardMarkup(
         inline_keyboard=[
             [InlineKeyboardButton(text='Перейти в меню', callback_data='menu')],
+            [InlineKeyboardButton(text='Отменить заявку!',
+                                callback_data=f'confirm-{order_id}')],
         ],
     )
-    order_id = post_sql_query(f'SELECT order_id FROM ORDERS WHERE username ='\
-                                f' "{current_user}"')[-1][0]
     update.callback_query.message.reply_text(
         text=f'Ваша заявка успешно оформлена.'\
                 f'№{order_id}\nПункт погрузки: {startpoint}\n'\
@@ -552,13 +554,29 @@ def confirmation_handler(update: Update, context: CallbackContext):
                             reply_markup=inline_buttons,)
     except IndexError:
         pass
+    inline_buttons = InlineKeyboardMarkup(
+        inline_keyboard=[
+            [InlineKeyboardButton(text='Посмотреть детали',
+                                url=f'tg://resolve?domain={TG_APP_NAME}')],
+        ],
+    )
     context.bot.send_message(chat_id=ADMIN,
-                            text=f'Новая заявка!\nПункт погрузки: {startpoint}\n'\
+                            text=f'Новая заявка! От @{current_user}\n'\
+                            f'Пункт погрузки: {startpoint}\n'\
                             f'Пункт выгрузки: {endpoint}\n'\
                             f'Расстояние: {mileage}км\n'\
                             f'Вес и тип: {weight}т {cargo_type}\n'\
                             f'Тариф: {price} грн/т, {payment_type}\nДата отгрузки: '\
                             f'{start_date}\nОграничения: {weight_limitations}')
+    context.bot.send_message(chat_id=GROUP,
+                            text=f'Новая заявка!\n'\
+                            f'Пункт погрузки: {startpoint}\n'\
+                            f'Пункт выгрузки: {endpoint}\n'\
+                            f'Расстояние: {mileage}км\n'\
+                            f'Вес и тип: {weight}т {cargo_type}\n'\
+                            f'Тариф: {price} грн/т, {payment_type}\nДата отгрузки: '\
+                            f'{start_date}\nОграничения: {weight_limitations}',
+                            reply_markup=inline_buttons,)
     return ConversationHandler.END
 
 
@@ -586,6 +604,11 @@ def order_acception_handler(update: Update, context: CallbackContext):
     if current_order[10] == 'Взят в работу':
         update.callback_query.message.reply_text(
             text='Заказ уже взят в работу.\nПерейти в меню - /menu'
+        )
+        return ConversationHandler.END
+    if current_order[10] == 'Выполнен':
+        update.callback_query.message.reply_text(
+            text='Заказ отменен.\nПерейти в меню - /menu'
         )
         return ConversationHandler.END
     if update.callback_query.data[:5] == 'order':
@@ -638,21 +661,27 @@ def done_orders_handler(update: Update, context: CallbackContext):
                                 f' "{order_id}";')[0]
     customer_details = post_sql_query(f'SELECT * FROM USERS WHERE username ='\
                                 f' "{current_order[1]}";')[0]
-    update.callback_query.message.reply_text(
-        text=f'Заявка отмечена как выполненная. Ожидайте подтверждения от '\
-            f'@{customer_details[0]}\nПерейти в меню - /menu')
-    inline_buttons = InlineKeyboardMarkup(
-        inline_keyboard=[
-            [InlineKeyboardButton(text='Подтвердить!',
-                                callback_data=f'confirm-{order_id}')],
-        ],
-    )
-    context.bot.send_message(chat_id=customer_details[-1],
-                    text=f'Заявка №{order_id} отмечена выполненной '\
-                            f'пользователем @{current_user}. '\
-                            f'Нажмите "Подтвердить!" для закрытия заявки.\n'\
-                            f'Перейти в меню - /menu',
-                    reply_markup=inline_buttons,)
+    if current_order[10] == 'Выполнен':
+        update.callback_query.message.reply_text(
+            text='Заказ отменен.\nПерейти в меню - /menu'
+        )
+        return ConversationHandler.END
+    else:
+        update.callback_query.message.reply_text(
+            text=f'Заявка отмечена как выполненная. Ожидайте подтверждения от '\
+                f'@{customer_details[0]}\nПерейти в меню - /menu')
+        inline_buttons = InlineKeyboardMarkup(
+            inline_keyboard=[
+                [InlineKeyboardButton(text='Подтвердить!',
+                                    callback_data=f'confirm-{order_id}')],
+            ],
+        )
+        context.bot.send_message(chat_id=customer_details[-1],
+                        text=f'Заявка №{order_id} отмечена выполненной '\
+                                f'пользователем @{current_user}. '\
+                                f'Нажмите "Подтвердить!" для закрытия заявки.\n'\
+                                f'Перейти в меню - /menu',
+                        reply_markup=inline_buttons,)
 
 
 @debug_requests
@@ -661,12 +690,13 @@ def confirmed_orders_handler(update: Update, context: CallbackContext):
     order_id = update.callback_query.data.split('-')[1]
     current_order = post_sql_query(f'SELECT * FROM ORDERS WHERE order_id ='\
                                 f' "{order_id}";')[0]
-    carrier_details = post_sql_query(f'SELECT * FROM USERS WHERE username ='\
-                                f' "{current_order[9]}";')[0]
     post_sql_query(f'UPDATE ORDERS SET status = "Выполнен" '\
                     f'WHERE order_id = "{order_id}";')
+    if current_user != current_order[1]:
+        carrier_details = post_sql_query(f'SELECT * FROM USERS WHERE username ='\
+                                    f' "{current_order[9]}";')[0]
+        context.bot.send_message(chat_id=carrier_details[-1],
+                text=f'Заявка №{order_id} закрыта пользователем @{current_user}')
     update.callback_query.message.reply_text(
         text='Заявка закрыта.'
     )
-    context.bot.send_message(chat_id=carrier_details[-1],
-            text=f'Заявка №{order_id} закрыта пользователем @{current_user}')
