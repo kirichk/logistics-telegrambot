@@ -34,7 +34,6 @@ def main():
     logger.info('Started')
     create_users_table()
     create_orders_table()
-
     req = Request(
         connect_timeout=30.0,
         read_timeout=1.0,
