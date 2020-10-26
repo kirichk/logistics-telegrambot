@@ -20,9 +20,9 @@ def cancel_handler(update: Update, context: CallbackContext):
 
 @debug_requests
 def echo_handler(update: Update, context: CallbackContext):
-    if update.message.chat.type != "channel":
+    try:
         update.message.reply_text(
             'Нажмите /start для заполнения анкеты!',
         )
-    else:
+    except AttributeError:
         pass
