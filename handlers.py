@@ -101,7 +101,7 @@ def role_handler(update: Update, context: CallbackContext):
             ],
         )
         update.callback_query.message.reply_text(
-            text='Вы успешно зарегистрированы. Чтобы просмотривать все заявки, подпишитесь на канал @LogisticsTransBotOrders',
+            text='Вы успешно зарегистрированы. Чтобы просматривать все заявки, подпишитесь на канал @LogisticsTransBotOrders',
             reply_markup=inline_buttons,
         )
         context.bot.send_message(chat_id=ADMIN,
@@ -175,7 +175,7 @@ def id_code_handler(update: Update, context: CallbackContext):
         ],
     )
     update.message.reply_text(
-        text='Вы успешно зарегистрированы. Чтобы просмотривать все заявки, подпишитесь на канал @LogisticsTransBotOrders',
+        text='Вы успешно зарегистрированы. Чтобы просматривать все заявки, подпишитесь на канал @LogisticsTransBotOrders',
         reply_markup=inline_buttons,
     )
     context.bot.send_message(chat_id=ADMIN,
