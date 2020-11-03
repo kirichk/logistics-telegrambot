@@ -162,7 +162,9 @@ def company_name_handler(update: Update, context: CallbackContext):
                             text=f'Новый пользователь @{current_user}.\n'\
                             f'Роль: {USER_MAP[int(context.user_data[ROLE])]}.')
 
+    return ConversationHandler.END
 
+    
 @debug_requests
 def menu_handler(update: Update, context: CallbackContext):
     try:
