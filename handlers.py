@@ -97,7 +97,7 @@ def role_handler(update: Update, context: CallbackContext):
         inline_buttons = InlineKeyboardMarkup(
             inline_keyboard=[
                 [InlineKeyboardButton(text='Перейти в меню',
-                                        callback_data='id')],
+                                        callback_data='menu')],
             ],
         )
         update.callback_query.message.reply_text(
@@ -107,7 +107,6 @@ def role_handler(update: Update, context: CallbackContext):
         context.bot.send_message(chat_id=ADMIN,
                                 text=f'Новый пользователь @{current_user}.\n'\
                                 f'Роль: {USER_MAP[role]}.')
-        return MENU
     else:
         # Спросить возраст
         inline_buttons = InlineKeyboardMarkup(
@@ -152,7 +151,7 @@ def company_name_handler(update: Update, context: CallbackContext):
 
     inline_buttons = InlineKeyboardMarkup(
         inline_keyboard=[
-            [InlineKeyboardButton(text='Перейти в меню', callback_data='id')],
+            [InlineKeyboardButton(text='Перейти в меню', callback_data='menu')],
         ],
     )
     update.message.reply_text(
@@ -162,7 +161,6 @@ def company_name_handler(update: Update, context: CallbackContext):
     context.bot.send_message(chat_id=ADMIN,
                             text=f'Новый пользователь @{current_user}.\n'\
                             f'Роль: {USER_MAP[int(context.user_data[ROLE])]}.')
-    return MENU
 
 
 @debug_requests
