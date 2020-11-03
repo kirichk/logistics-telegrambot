@@ -43,7 +43,6 @@ def create_users_table():
                         role TEXT,
                         ownership TEXT,
                         company_name TEXT,
-                        id_code TEXT,
                         phone TEXT,
                         reg_date TEXT,
                         chat_id TEXT);'''
@@ -51,16 +50,16 @@ def create_users_table():
 
 
 def register_user(username, full_name, role, ownership,
-                    company_name, id_code, phone, chat_id, reg_date):
+                    company_name, phone, chat_id, reg_date):
     user_check_query = f'SELECT * FROM USERS WHERE username = "{username}";'
     user_check_data = post_sql_query(user_check_query)
 
     if not user_check_data:
         insert_to_db_query = f'INSERT INTO USERS (username, full_name, role, '\
-                            f'ownership, company_name, id_code, phone, chat_id, '\
+                            f'ownership, company_name, phone, chat_id, '\
                             f'reg_date) VALUES ("{username}", "{full_name}", '\
                             f'"{role}", "{ownership}", "{company_name}", '\
-                            f'"{id_code}", "{phone}", "{chat_id}", "{reg_date}");'
+                            f'"{phone}", "{chat_id}", "{reg_date}");'
         post_sql_query(insert_to_db_query)
 
 

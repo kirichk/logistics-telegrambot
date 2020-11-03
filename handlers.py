@@ -138,24 +138,6 @@ def ownership_handler(update: Update, context: CallbackContext):
 def company_name_handler(update: Update, context: CallbackContext):
     context.user_data[COMPANY_NAME] = update.message.text
     logger.info('user_data: %s', context.user_data)
-    update.message.reply_text(
-        text='Введите ИНН или ЕДРПО.',
-    )
-    return ID_CODE
-
-
-@debug_requests
-def id_code_handler(update: Update, context: CallbackContext):
-
-    id = validate_id(update.message.text)
-    while id is None:
-        update.message.reply_text(
-            text='Некорректный ИНН или ЕДРПО! Пожалуйста повторите попытку.',
-        )
-        return ID_CODE
-
-    context.user_data[ID_CODE] = id
-    logger.info('user_data: %s', context.user_data)
     current_user = update.message.chat.username
     now = datetime.now()
 
@@ -164,7 +146,6 @@ def id_code_handler(update: Update, context: CallbackContext):
                     role=context.user_data[ROLE],
                     ownership=context.user_data[OWNERSHIP],
                     company_name=context.user_data[COMPANY_NAME],
-                    id_code=context.user_data[ID_CODE],
                     phone=context.user_data[PHONE],
                     reg_date=now.strftime("%m/%d/%Y, %H:%M:%S"),
                     chat_id=update.message.chat.id)

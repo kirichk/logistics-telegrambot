@@ -8,7 +8,7 @@ from telegram.utils.request import Request
 from tools.database import create_users_table, create_orders_table
 from handlers import (start_buttons_handler, phone_handler, name_handler,
                             role_handler, ownership_handler,
-                            company_name_handler, id_code_handler, menu_handler,
+                            company_name_handler,menu_handler,
                             menu_choice_handler, startpoint_handler,
                             endpoint_handler, weight_handler,
                             weight_limitations_handler, mileage_handler,
@@ -25,9 +25,9 @@ TOKEN = os.getenv('TOKEN')
 HEROKU_APP_NAME = os.getenv('HEROKU_APP_NAME')
 PORT = int(os.environ.get("PORT", "8443"))
 
-(PHONE, NAME, ROLE , OWNERSHIP, COMPANY_NAME, ID_CODE,
+(PHONE, NAME, ROLE , OWNERSHIP, COMPANY_NAME,
 MENU, MENU_CHOICE, STARTPOINT, ENDPOINT, WEIGHT, MILEAGE, WEIGHT_LIMITATIONS,
-CARGO, CALENDAR, PRICE, PAYMENT, CONFIRMATION) = range(18)
+CARGO, CALENDAR, PRICE, PAYMENT, CONFIRMATION) = range(17)
 
 
 def main():
@@ -92,8 +92,6 @@ def main():
             OWNERSHIP: [CallbackQueryHandler(ownership_handler,
                                     pass_user_data=True),],
             COMPANY_NAME: [MessageHandler(Filters.all, company_name_handler,
-                                    pass_user_data=True),],
-            ID_CODE: [MessageHandler(Filters.all, id_code_handler,
                                     pass_user_data=True),],
             MENU: [CallbackQueryHandler(menu_handler,
                                     pass_user_data=True),],
