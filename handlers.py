@@ -26,8 +26,6 @@ debug_requests = logger_factory(logger=logger)
 (PHONE, NAME, COMPANY_NAME, STARTPOINT, ENDPOINT, WEIGHT, MILEAGE,
 WEIGHT_LIMITATIONS, CARGO, PRICE, PAYMENT) = range(11)
 
-ROLE = OWNERSHIP = CALENDAR = COMPANY_NAME = ''
-
 
 @debug_requests
 def start_buttons_handler(update: Update, context: CallbackContext):
@@ -79,7 +77,7 @@ def name_handler(update: Update, context: CallbackContext):
 @debug_requests
 def role_handler(update: Update, context: CallbackContext):
     role = int(update.callback_query.data.split('-')[1])
-    context.user_data[ROLE] = update.callback_query.data
+    context.user_data['ROLE'] = update.callback_query.data
     logger.info('user_data: %s', context.user_data)
     current_user = update.callback_query.message.chat.username
     now = datetime.now()
@@ -87,7 +85,7 @@ def role_handler(update: Update, context: CallbackContext):
     if role == 2:
         register_user(username=current_user,
                         full_name=context.user_data[NAME],
-                        role=context.user_data[ROLE],
+                        role=context.user_data['ROLE'],
                         ownership='',
                         company_name='',
                         id_code='',
@@ -107,7 +105,7 @@ def role_handler(update: Update, context: CallbackContext):
         )
         context.bot.send_message(chat_id=ADMIN,
                                 text=f'Новый пользователь @{current_user}.\n'\
-                                f'Роль: {USER_MAP[context.user_data[ROLE]]}.')
+                                f'Роль: {USER_MAP[context.user_data["ROLE"]]}.')
     else:
         # Спросить возраст
         inline_buttons = InlineKeyboardMarkup(
@@ -126,7 +124,7 @@ def role_handler(update: Update, context: CallbackContext):
 
 @debug_requests
 def ownership_handler(update: Update, context: CallbackContext):
-    context.user_data[OWNERSHIP] = update.callback_query.data
+    context.user_data['OWNERSHIP'] = update.callback_query.data
     logger.info('user_data: %s', context.user_data)
 
     update.callback_query.edit_message_text(
@@ -144,8 +142,8 @@ def company_name_handler(update: Update, context: CallbackContext):
 
     register_user(username=current_user,
                     full_name=context.user_data[NAME],
-                    role=context.user_data[ROLE],
-                    ownership=context.user_data[OWNERSHIP],
+                    role=context.user_data['ROLE'],
+                    ownership=context.user_data['OWNERSHIP'],
                     company_name=context.user_data[COMPANY_NAME],
                     phone=context.user_data[PHONE],
                     reg_date=now.strftime("%m/%d/%Y, %H:%M:%S"),
@@ -162,7 +160,7 @@ def company_name_handler(update: Update, context: CallbackContext):
     )
     context.bot.send_message(chat_id=ADMIN,
                             text=f'Новый пользователь @{current_user}.\n'\
-                            f'Роль: {USER_MAP[context.user_data[ROLE]]}.')
+                            f'Роль: {USER_MAP[context.user_data["ROLE"]]}.')
 
     return ConversationHandler.END
 
@@ -211,7 +209,7 @@ def menu_handler(update: Update, context: CallbackContext):
             reply_markup=inline_buttons,
         )
     else:
-        request.edit_message_text(
+        request.message.reply_text(
             text=f'Вы в главном меню, чтобы вернуться сюда в любой момент '\
                     'нажмите или введите /menu.\nВыберите действие которое нужно '\
                     'выполнить.',
@@ -273,7 +271,7 @@ def menu_choice_handler(update: Update, context: CallbackContext):
                                         callback_data='menu')],
             ],
         )
-        update.callback_query.edit_message_text(
+        update.callback_query.message.reply_text(
             text='Выше перечень всех предыдущих заказов.',
             reply_markup=inline_buttons,
         )
@@ -313,7 +311,7 @@ def menu_choice_handler(update: Update, context: CallbackContext):
                                         callback_data='menu')],
             ],
         )
-        update.callback_query.edit_message_text(
+        update.callback_query.message.reply_text(
             text='Выше перечень всех активных заказов.',
             reply_markup=inline_buttons,
         )
@@ -430,7 +428,7 @@ def calendar_handler(update: Update, context: CallbackContext):
 def price_handler(update: Update, context: CallbackContext):
     selected,date = telegramcalendar.process_calendar_selection(update, context)
     if selected:
-        context.user_data[CALENDAR] = date.strftime("%d/%m/%Y")
+        context.user_data['CALENDAR'] = date.strftime("%d/%m/%Y")
         update.callback_query.edit_message_text(
             text="Вы выбрали %s" % (date.strftime("%d/%m/%Y"))
         )
@@ -469,7 +467,7 @@ def confirmation_handler(update: Update, context: CallbackContext):
     endpoint = context.user_data[ENDPOINT]
     weight = context.user_data[WEIGHT]
     cargo_type = context.user_data[CARGO]
-    start_date = context.user_data[CALENDAR]
+    start_date = context.user_data['CALENDAR']
     price = context.user_data[PRICE]
     payment_type = context.user_data[PAYMENT]
     weight_limitations = context.user_data[WEIGHT_LIMITATIONS]
