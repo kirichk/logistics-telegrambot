@@ -22,7 +22,7 @@ def cancel_handler(update: Update, context: CallbackContext):
 def echo_handler(update: Update, context: CallbackContext):
     try:
         update.message.reply_text(
-            'Нажмите /start для заполнения анкеты!',
+            'Нажмите /menu для возвращения обратно!',
         )
     except AttributeError:
         pass

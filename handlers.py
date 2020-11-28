@@ -209,12 +209,20 @@ def menu_handler(update: Update, context: CallbackContext):
             reply_markup=inline_buttons,
         )
     else:
-        request.message.reply_text(
-            text=f'Вы в главном меню, чтобы вернуться сюда в любой момент '\
-                    'нажмите или введите /menu.\nВыберите действие которое нужно '\
-                    'выполнить.',
-            reply_markup=inline_buttons,
-        )
+        if request.data[-2:] == 're':
+            request.message.reply_text(
+                text=f'Вы в главном меню, чтобы вернуться сюда в любой момент '\
+                        'нажмите или введите /menu.\nВыберите действие которое нужно '\
+                        'выполнить.',
+                reply_markup=inline_buttons,
+            )
+        else:
+            request.edit_message_text(
+                text=f'Вы в главном меню, чтобы вернуться сюда в любой момент '\
+                        'нажмите или введите /menu.\nВыберите действие которое нужно '\
+                        'выполнить.',
+                reply_markup=inline_buttons,
+            )
     return ConversationHandler.END
 
 
@@ -320,7 +328,11 @@ def menu_choice_handler(update: Update, context: CallbackContext):
 
 @debug_requests
 def startpoint_handler(update: Update, context: CallbackContext):
-
+    if update.message.text == '/menu':
+        update.message.reply_text(
+            text='Пожалуйста повторите ввод /menu'
+        )
+        return ConversationHandler.END
     context.user_data[STARTPOINT] = update.message.text
     logger.info('user_data: %s', context.user_data)
 
@@ -333,7 +345,11 @@ def startpoint_handler(update: Update, context: CallbackContext):
 
 @debug_requests
 def endpoint_handler(update: Update, context: CallbackContext):
-
+    if update.message.text == '/menu':
+        update.message.reply_text(
+            text='Пожалуйста повторите ввод /menu'
+        )
+        return ConversationHandler.END
     context.user_data[ENDPOINT] = update.message.text
     logger.info('user_data: %s', context.user_data)
     update.message.reply_text(
@@ -344,6 +360,11 @@ def endpoint_handler(update: Update, context: CallbackContext):
 
 @debug_requests
 def weight_handler(update: Update, context: CallbackContext):
+    if update.message.text == '/menu':
+        update.message.reply_text(
+            text='Пожалуйста повторите ввод /menu'
+        )
+        return ConversationHandler.END
     weight = update.message.text
     context.user_data[WEIGHT] = weight
     logger.info('user_data: %s', context.user_data)
@@ -375,6 +396,11 @@ def weight_limitations_handler(update: Update, context: CallbackContext):
             text='Введите растояние между точками погрузки и выгрузки (км).'
         )
     except AttributeError:
+        if update.message.text == '/menu':
+            update.message.reply_text(
+                text='Пожалуйста повторите ввод /menu'
+            )
+            return ConversationHandler.END
         request = update.message
         weight_limitations  = request.text
         context.user_data[WEIGHT_LIMITATIONS] = weight_limitations
@@ -386,6 +412,11 @@ def weight_limitations_handler(update: Update, context: CallbackContext):
 
 @debug_requests
 def mileage_handler(update: Update, context: CallbackContext):
+    if update.message.text == '/menu':
+        update.message.reply_text(
+            text='Пожалуйста повторите ввод /menu'
+        )
+        return ConversationHandler.END
     mileage = update.message.text
     context.user_data[MILEAGE] = mileage
     logger.info('user_data: %s', context.user_data)
@@ -398,7 +429,11 @@ def mileage_handler(update: Update, context: CallbackContext):
 
 @debug_requests
 def cargo_handler(update: Update, context: CallbackContext):
-
+    if update.message.text == '/menu':
+        update.message.reply_text(
+            text='Пожалуйста повторите ввод /menu'
+        )
+        return ConversationHandler.END
     context.user_data[CARGO] = update.message.text
     logger.info('user_data: %s', context.user_data)
 
@@ -439,6 +474,11 @@ def price_handler(update: Update, context: CallbackContext):
 
 @debug_requests
 def payment_handler(update: Update, context: CallbackContext):
+    if update.message.text == '/menu':
+        update.message.reply_text(
+            text='Пожалуйста повторите ввод /menu'
+        )
+        return ConversationHandler.END
     price = update.message.text
     context.user_data[PRICE] = price
     logger.info('user_data: %s', context.user_data)
@@ -494,7 +534,7 @@ def confirmation_handler(update: Update, context: CallbackContext):
                                 f' "{current_user}"')[-1][0]
     inline_buttons = InlineKeyboardMarkup(
         inline_keyboard=[
-            [InlineKeyboardButton(text='Перейти в меню', callback_data='menu')],
+            [InlineKeyboardButton(text='Перейти в меню', callback_data='menu-re')],
             [InlineKeyboardButton(text='Отменить заявку!',
                                 callback_data=f'confirm-{order_id}')],
         ],
@@ -600,7 +640,7 @@ def order_acception_handler(update: Update, context: CallbackContext):
                                     callback_data=f'done-{order_id}')],
             ],
         )
-        update.callback_query.edit_message_text(
+        update.callback_query.message.reply_text(
             text='Когда заявка будет выполнена, нажмите '\
                     '"Выполнено!" чтобы закрыть ее. ',
             reply_markup=inline_buttons,
@@ -611,14 +651,14 @@ def order_acception_handler(update: Update, context: CallbackContext):
 
     else:
         if customer_details[2] == 'role-2':
-            update.callback_query.edit_message_text(
+            update.callback_query.message.reply_text(
                 text=f'Отправлено диспетчером!\n'\
                     f'Имя: {customer_details[1]}\n'\
                     f'Номер телефона: {customer_details[6]}\n'\
                     f'Telegram: @{customer_details[0]}'
             )
         else:
-            update.callback_query.edit_message_text(
+            update.callback_query.message.reply_text(
                 text=f'Название компании: {customer_details[4]}\n'\
                     f'Имя: {customer_details[1]}\n'\
                     f'Номер телефона: {customer_details[6]}\n'\
