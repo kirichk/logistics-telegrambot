@@ -26,7 +26,7 @@ debug_requests = logger_factory(logger=logger)
 (PHONE, NAME, COMPANY_NAME, STARTPOINT, ENDPOINT, WEIGHT, MILEAGE,
 WEIGHT_LIMITATIONS, CARGO, PRICE, PAYMENT) = range(11)
 
-CALENDAR = ''
+ROLE = OWNERSHIP = CALENDAR = COMPANY_NAME = ''
 
 
 @debug_requests
