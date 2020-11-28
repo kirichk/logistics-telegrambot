@@ -10,7 +10,7 @@ from telegram.utils.request import Request
 from tools.database import (post_sql_query, create_users_table,
                         register_user, create_orders_table, register_order)
 from tools.validators import (USER_MAP, OWNERSHIP_MAP, PAYMENT_MAP,
-                                MENU_CHOICES, gender_hru, validate_id,
+                                gender_hru, validate_id,
                                 validate_float, validate_chosed_weight,
                                 logger_factory)
 from tools.calendar import telegramcalendar
@@ -23,9 +23,10 @@ GROUP = os.getenv("GROUP")
 TG_APP_NAME = os.getenv('TG_APP_NAME')
 debug_requests = logger_factory(logger=logger)
 
-(PHONE, NAME, ROLE , OWNERSHIP, COMPANY_NAME, ID_CODE,
-MENU, MENU_CHOICE, STARTPOINT, ENDPOINT, WEIGHT, MILEAGE, WEIGHT_LIMITATIONS,
-CARGO, CALENDAR, PRICE, PAYMENT, CONFIRMATION) = range(18)
+(PHONE, NAME, COMPANY_NAME, STARTPOINT, ENDPOINT, WEIGHT, MILEAGE,
+WEIGHT_LIMITATIONS, CARGO, PRICE, PAYMENT) = range(11)
+
+CALENDAR = ''
 
 
 @debug_requests
@@ -72,13 +73,13 @@ def name_handler(update: Update, context: CallbackContext):
         text='Выберите тип пользователя.',
         reply_markup=inline_buttons,
     )
-    return ROLE
+    return ConversationHandler.END
 
 
 @debug_requests
 def role_handler(update: Update, context: CallbackContext):
-    role = int(update.callback_query.data)
-    context.user_data[ROLE] = role
+    role = int(update.callback_query.data.split('-')[1])
+    context.user_data[ROLE] = update.callback_query.data
     logger.info('user_data: %s', context.user_data)
     current_user = update.callback_query.message.chat.username
     now = datetime.now()
@@ -100,13 +101,13 @@ def role_handler(update: Update, context: CallbackContext):
                                         callback_data='menu')],
             ],
         )
-        update.callback_query.message.reply_text(
+        update.callback_query.edit_message_text(
             text='Вы успешно зарегистрированы. Чтобы просматривать все заявки, подпишитесь на канал @LogisticsTransBotOrders',
             reply_markup=inline_buttons,
         )
         context.bot.send_message(chat_id=ADMIN,
                                 text=f'Новый пользователь @{current_user}.\n'\
-                                f'Роль: {USER_MAP[role]}.')
+                                f'Роль: {USER_MAP[context.user_data[ROLE]]}.')
     else:
         # Спросить возраст
         inline_buttons = InlineKeyboardMarkup(
@@ -115,11 +116,12 @@ def role_handler(update: Update, context: CallbackContext):
                                     for key, value in OWNERSHIP_MAP.items()],
             ],
         )
-        update.callback_query.message.reply_text(
+        update.callback_query.edit_message_text(
             text='Выберите форму собственности.',
             reply_markup=inline_buttons,
         )
-        return OWNERSHIP
+
+    return ConversationHandler.END
 
 
 @debug_requests
@@ -127,7 +129,7 @@ def ownership_handler(update: Update, context: CallbackContext):
     context.user_data[OWNERSHIP] = update.callback_query.data
     logger.info('user_data: %s', context.user_data)
 
-    update.callback_query.message.reply_text(
+    update.callback_query.edit_message_text(
         text=f'Введите название компании.',
     )
     return COMPANY_NAME
@@ -160,18 +162,19 @@ def company_name_handler(update: Update, context: CallbackContext):
     )
     context.bot.send_message(chat_id=ADMIN,
                             text=f'Новый пользователь @{current_user}.\n'\
-                            f'Роль: {USER_MAP[int(context.user_data[ROLE])]}.')
+                            f'Роль: {USER_MAP[context.user_data[ROLE]]}.')
 
     return ConversationHandler.END
 
-    
+
 @debug_requests
 def menu_handler(update: Update, context: CallbackContext):
     try:
-        request = update.callback_query.message
+        request = update.callback_query
+        current_user = request.message.chat.username
     except AttributeError:
         request = update.message
-    current_user = request.chat.username
+        current_user = request.chat.username
     try:
         user_role = post_sql_query(f'SELECT role FROM USERS WHERE username ='\
                                 f' "{current_user}"')[0][0]
@@ -180,7 +183,7 @@ def menu_handler(update: Update, context: CallbackContext):
             'Нажмите /start для заполнения анкеты!',
         )
         return ConversationHandler.END
-    if int(user_role) == 3 or int(user_role) == 2:
+    if user_role == 'role-3' or user_role == 'role-2':
         inline_buttons = InlineKeyboardMarkup(
             inline_keyboard=[
                 [InlineKeyboardButton(text='Создать заявку',
@@ -200,13 +203,21 @@ def menu_handler(update: Update, context: CallbackContext):
                                     callback_data='active_orders')],
             ],
         )
-    request.reply_text(
-        text=f'Вы в главном меню, чтобы вернуться сюда в любой момент '\
-                'нажмите или введите /menu.\nВыберите действие которое нужно '\
-                'выполнить.',
-        reply_markup=inline_buttons,
-    )
-    return MENU_CHOICE
+    if request == update.message:
+        request.reply_text(
+            text=f'Вы в главном меню, чтобы вернуться сюда в любой момент '\
+                    'нажмите или введите /menu.\nВыберите действие которое нужно '\
+                    'выполнить.',
+            reply_markup=inline_buttons,
+        )
+    else:
+        request.edit_message_text(
+            text=f'Вы в главном меню, чтобы вернуться сюда в любой момент '\
+                    'нажмите или введите /menu.\nВыберите действие которое нужно '\
+                    'выполнить.',
+            reply_markup=inline_buttons,
+        )
+    return ConversationHandler.END
 
 
 @debug_requests
@@ -223,7 +234,7 @@ def menu_choice_handler(update: Update, context: CallbackContext):
         return ConversationHandler.END
 
     if choice == 'new_order':
-        update.callback_query.message.reply_text(
+        update.callback_query.edit_message_text(
             text='Введите пункт погрузки (область, город/cело/смт и тд.)'
         )
         return STARTPOINT
@@ -232,9 +243,9 @@ def menu_choice_handler(update: Update, context: CallbackContext):
                         f'"Выполнен" AND username = "{current_user}"')
         query_carrier = post_sql_query(f'SELECT * FROM ORDERS WHERE status = '\
                         f'"Выполнен" AND carrier_username = "{current_user}"')
-        if int(user_role) == 2 or int(user_role) == 3:
+        if user_role == 'role-2' or user_role == 'role-3':
             for row in query_customer:
-                update.callback_query.message.reply_text(
+                update.callback_query.edit_message_text(
                     text=f'Пункт погрузки: {row[2]}\n'\
                     f'Пункт выгрузки: {row[3]}\n'\
                     f'Расстояние: {row[12]}км\n'\
@@ -246,7 +257,7 @@ def menu_choice_handler(update: Update, context: CallbackContext):
                 )
         else:
             for row in query_carrier:
-                update.callback_query.message.reply_text(
+                update.callback_query.edit_message_text(
                     text=f'Пункт погрузки: {row[2]}\n'\
                     f'Пункт выгрузки: {row[3]}\n'\
                     f'Расстояние: {row[12]}км\n'\
@@ -262,19 +273,19 @@ def menu_choice_handler(update: Update, context: CallbackContext):
                                         callback_data='menu')],
             ],
         )
-        update.callback_query.message.reply_text(
+        update.callback_query.edit_message_text(
             text='Выше перечень всех предыдущих заказов.',
             reply_markup=inline_buttons,
         )
-        return MENU
+
     elif choice == 'active_orders':
         query_customer = post_sql_query(f'SELECT * FROM ORDERS WHERE status != '\
                         f'"Выполнен" AND username = "{current_user}"')
         query_carrier = post_sql_query(f'SELECT * FROM ORDERS WHERE status != '\
                         f'"Выполнен" AND carrier_username = "{current_user}"')
-        if int(user_role) == 2 or int(user_role) == 3:
+        if user_role == 'role-2' or user_role == 'role-3':
             for row in query_customer:
-                update.callback_query.message.reply_text(
+                update.callback_query.edit_message_text(
                     text=f'Пункт погрузки: {row[2]}\n'\
                     f'Пункт выгрузки: {row[3]}\n'\
                     f'Расстояние: {row[12]}км\n'\
@@ -286,7 +297,7 @@ def menu_choice_handler(update: Update, context: CallbackContext):
                 )
         else:
             for row in query_carrier:
-                update.callback_query.message.reply_text(
+                update.callback_query.edit_message_text(
                     text=f'Пункт погрузки: {row[2]}\n'\
                     f'Пункт выгрузки: {row[3]}\n'\
                     f'Расстояние: {row[12]}км\n'\
@@ -302,7 +313,7 @@ def menu_choice_handler(update: Update, context: CallbackContext):
                                         callback_data='menu')],
             ],
         )
-        update.callback_query.message.reply_text(
+        update.callback_query.edit_message_text(
             text='Выше перечень всех активных заказов.',
             reply_markup=inline_buttons,
         )
@@ -335,12 +346,7 @@ def endpoint_handler(update: Update, context: CallbackContext):
 
 @debug_requests
 def weight_handler(update: Update, context: CallbackContext):
-    weight = validate_float(update.message.text)
-    while weight is None:
-        update.message.reply_text(
-            text='Некорректный вес! Пожалуйста повторите попытку.',
-        )
-        return WEIGHT
+    weight = update.message.text
     context.user_data[WEIGHT] = weight
     logger.info('user_data: %s', context.user_data)
 
@@ -362,30 +368,27 @@ def weight_handler(update: Update, context: CallbackContext):
 
 @debug_requests
 def weight_limitations_handler(update: Update, context: CallbackContext):
+    logger.info('user_data: %s', context.user_data)
     try:
-        request = update.callback_query.message
+        request = update.callback_query
         weight_limitations = 'Нет ограничений'
+        context.user_data[WEIGHT_LIMITATIONS] = weight_limitations
+        request.edit_message_text(
+            text='Введите растояние между точками погрузки и выгрузки (км).'
+        )
     except AttributeError:
         request = update.message
         weight_limitations  = request.text
-
-    context.user_data[WEIGHT_LIMITATIONS] = weight_limitations
-    logger.info('user_data: %s', context.user_data)
-
-    request.reply_text(
-        text='Введите растояние между точками погрузки и выгрузки (км).'
-    )
+        context.user_data[WEIGHT_LIMITATIONS] = weight_limitations
+        request.reply_text(
+            text='Введите растояние между точками погрузки и выгрузки (км).'
+        )
     return MILEAGE
 
 
 @debug_requests
 def mileage_handler(update: Update, context: CallbackContext):
-    mileage = validate_float(update.message.text)
-    while mileage is None:
-        update.message.reply_text(
-            text='Некорректный километраж! Пожалуйста повторите попытку.',
-        )
-        return MILEAGE
+    mileage = update.message.text
     context.user_data[MILEAGE] = mileage
     logger.info('user_data: %s', context.user_data)
 
@@ -404,7 +407,7 @@ def cargo_handler(update: Update, context: CallbackContext):
     inline_buttons = InlineKeyboardMarkup(
         inline_keyboard=[
             [InlineKeyboardButton(text='Выбрать дату',
-                                    callback_data='new_order')],
+                                    callback_data='calendar')],
         ],
     )
     update.message.reply_text(
@@ -412,13 +415,13 @@ def cargo_handler(update: Update, context: CallbackContext):
         reply_markup=inline_buttons,
     )
 
-    return CALENDAR
+    return ConversationHandler.END
 
 
 @debug_requests
 def calendar_handler(update: Update, context: CallbackContext):
 
-    update.callback_query.message.reply_text(u'\U00002b07',
+    update.callback_query.edit_message_text("Выберите дату",
                         reply_markup=telegramcalendar.create_calendar())
     return PRICE
 
@@ -428,22 +431,17 @@ def price_handler(update: Update, context: CallbackContext):
     selected,date = telegramcalendar.process_calendar_selection(update, context)
     if selected:
         context.user_data[CALENDAR] = date.strftime("%d/%m/%Y")
-        context.bot.send_message(chat_id=update.callback_query.from_user.id,
-                        text="Вы выбрали %s" % (date.strftime("%d/%m/%Y")))
-    update.callback_query.message.reply_text(
-        text='Введите тариф (грн/т).'
-    )
+        update.callback_query.edit_message_text(
+            text="Вы выбрали %s" % (date.strftime("%d/%m/%Y"))
+        )
+    context.bot.send_message(chat_id=update.callback_query.from_user.id,
+                    text='Введите тариф (грн/т).')
     return PAYMENT
 
 
 @debug_requests
 def payment_handler(update: Update, context: CallbackContext):
-    price = validate_float(update.message.text)
-    while price is None:
-        update.message.reply_text(
-            text='Некорректный тариф! Пожалуйста повторите попытку.',
-        )
-        return PAYMENT
+    price = update.message.text
     context.user_data[PRICE] = price
     logger.info('user_data: %s', context.user_data)
 
@@ -459,13 +457,13 @@ def payment_handler(update: Update, context: CallbackContext):
         reply_markup=inline_buttons,
     )
 
-    return CONFIRMATION
+    return ConversationHandler.END
 
 
 @debug_requests
 def confirmation_handler(update: Update, context: CallbackContext):
 
-    context.user_data[PAYMENT] = PAYMENT_MAP[int(update.callback_query.data)]
+    context.user_data[PAYMENT] = PAYMENT_MAP[update.callback_query.data]
     current_user = update.callback_query.message.chat.username
     startpoint = context.user_data[STARTPOINT]
     endpoint = context.user_data[ENDPOINT]
@@ -503,7 +501,7 @@ def confirmation_handler(update: Update, context: CallbackContext):
                                 callback_data=f'confirm-{order_id}')],
         ],
     )
-    update.callback_query.message.reply_text(
+    update.callback_query.edit_message_text(
         text=f'Ваша заявка успешно оформлена.'\
                 f'№{order_id}\nПункт погрузки: {startpoint}\n'\
                 f'Пункт выгрузки: {endpoint}\n'\
@@ -576,27 +574,25 @@ def order_acception_handler(update: Update, context: CallbackContext):
                                 "%m/%d/%Y, %H:%M:%S") -
             datetime.strptime(current_order[-1],"%m/%d/%Y, %H:%M:%S")).days
     if diff >= 3:
-        update.callback_query.message.reply_text(
+        update.callback_query.edit_message_text(
             text='Заказ уже неавктивен.\nПерейти в меню - /menu'
         )
         post_sql_query(f'UPDATE ORDERS SET status = "Выполнен" '\
                         f'WHERE order_id = "{order_id}";')
         return ConversationHandler.END
     if current_order[10] == 'Взят в работу':
-        update.callback_query.message.reply_text(
+        update.callback_query.edit_message_text(
             text='Заказ уже взят в работу.\nПерейти в меню - /menu'
         )
-        return ConversationHandler.END
     if current_order[10] == 'Выполнен':
-        update.callback_query.message.reply_text(
+        update.callback_query.edit_message_text(
             text='Заказ отменен.\nПерейти в меню - /menu'
         )
-        return ConversationHandler.END
     if update.callback_query.data[:5] == 'order':
         post_sql_query(f'UPDATE ORDERS SET status = "Взят в работу", '\
                         f'carrier_username = "{current_user}" WHERE order_id ='\
                         f' "{current_order[0]}";')
-        update.callback_query.message.reply_text(
+        update.callback_query.edit_message_text(
             text=f'Вы подтвердили транспортировку по заявке №{current_order[0]}\n'\
                     f'Заказчик: @{current_order[1]}'
         )
@@ -606,7 +602,7 @@ def order_acception_handler(update: Update, context: CallbackContext):
                                     callback_data=f'done-{order_id}')],
             ],
         )
-        update.callback_query.message.reply_text(
+        update.callback_query.edit_message_text(
             text='Когда заявка будет выполнена, нажмите '\
                     '"Выполнено!" чтобы закрыть ее. ',
             reply_markup=inline_buttons,
@@ -616,22 +612,23 @@ def order_acception_handler(update: Update, context: CallbackContext):
                                 f'пользователем @{current_user}.')
 
     else:
-        if int(customer_details[2]) == 2:
-            update.callback_query.message.reply_text(
+        if customer_details[2] == 'role-2':
+            update.callback_query.edit_message_text(
                 text=f'Отправлено диспетчером!\n'\
                     f'Имя: {customer_details[1]}\n'\
                     f'Номер телефона: {customer_details[6]}\n'\
                     f'Telegram: @{customer_details[0]}'
             )
         else:
-            update.callback_query.message.reply_text(
+            update.callback_query.edit_message_text(
                 text=f'Название компании: {customer_details[4]}\n'\
                     f'Имя: {customer_details[1]}\n'\
                     f'Номер телефона: {customer_details[6]}\n'\
                     f'Telegram: @{customer_details[0]}\n'
                     f'ИНН: {customer_details[5]}\n'\
-                    f'Тип компании: {OWNERSHIP_MAP[int(customer_details[3])]}\n'\
+                    f'Тип компании: {OWNERSHIP_MAP[customer_details[3]]}\n'\
             )
+    return ConversationHandler.END
 
 
 @debug_requests
@@ -643,12 +640,11 @@ def done_orders_handler(update: Update, context: CallbackContext):
     customer_details = post_sql_query(f'SELECT * FROM USERS WHERE username ='\
                                 f' "{current_order[1]}";')[0]
     if current_order[10] == 'Выполнен':
-        update.callback_query.message.reply_text(
+        update.callback_query.edit_message_text(
             text='Заказ отменен.\nПерейти в меню - /menu'
         )
-        return ConversationHandler.END
     else:
-        update.callback_query.message.reply_text(
+        update.callback_query.edit_message_text(
             text=f'Заявка отмечена как выполненная. Ожидайте подтверждения от '\
                 f'@{customer_details[0]}\nПерейти в меню - /menu')
         inline_buttons = InlineKeyboardMarkup(
@@ -663,7 +659,7 @@ def done_orders_handler(update: Update, context: CallbackContext):
                                 f'Нажмите "Подтвердить!" для закрытия заявки.\n'\
                                 f'Перейти в меню - /menu',
                         reply_markup=inline_buttons,)
-
+    return ConversationHandler.END
 
 @debug_requests
 def confirmed_orders_handler(update: Update, context: CallbackContext):
@@ -678,6 +674,7 @@ def confirmed_orders_handler(update: Update, context: CallbackContext):
                                     f' "{current_order[9]}";')[0]
         context.bot.send_message(chat_id=carrier_details[-1],
                 text=f'Заявка №{order_id} закрыта пользователем @{current_user}')
-    update.callback_query.message.reply_text(
+    update.callback_query.edit_message_text(
         text='Заявка закрыта.'
     )
+    return ConversationHandler.END

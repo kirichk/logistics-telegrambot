@@ -25,9 +25,8 @@ TOKEN = os.getenv('TOKEN')
 HEROKU_APP_NAME = os.getenv('HEROKU_APP_NAME')
 PORT = int(os.environ.get("PORT", "8443"))
 
-(PHONE, NAME, ROLE , OWNERSHIP, COMPANY_NAME,
-MENU, MENU_CHOICE, STARTPOINT, ENDPOINT, WEIGHT, MILEAGE, WEIGHT_LIMITATIONS,
-CARGO, CALENDAR, PRICE, PAYMENT, CONFIRMATION) = range(17)
+(PHONE, NAME, COMPANY_NAME, STARTPOINT, ENDPOINT, WEIGHT, MILEAGE,
+WEIGHT_LIMITATIONS, CARGO, PRICE, PAYMENT) = range(11)
 
 
 def main():
@@ -57,6 +56,18 @@ def main():
         entry_points=[
             CommandHandler('start', start_buttons_handler),
             CommandHandler('menu', menu_handler),
+            CallbackQueryHandler(role_handler,
+                                    pattern=r'(role)',
+                                    pass_user_data=True),
+            CallbackQueryHandler(ownership_handler,
+                                    pattern=r'(owner)',
+                                    pass_user_data=True),
+            CallbackQueryHandler(calendar_handler,
+                                    pattern=r'(calendar)',
+                                    pass_user_data=True),
+            CallbackQueryHandler(confirmation_handler,
+                                    pattern=r'(payment)',
+                                    pass_user_data=True),
             CallbackQueryHandler(order_acception_handler,
                                     pattern=r'(order).[0-9]+',
                                     pass_user_data=True),
@@ -87,15 +98,7 @@ def main():
                                     pass_user_data=True),],
             NAME: [MessageHandler(Filters.all, name_handler,
                                     pass_user_data=True),],
-            ROLE : [CallbackQueryHandler(role_handler,
-                                    pass_user_data=True),],
-            OWNERSHIP: [CallbackQueryHandler(ownership_handler,
-                                    pass_user_data=True),],
             COMPANY_NAME: [MessageHandler(Filters.all, company_name_handler,
-                                    pass_user_data=True),],
-            MENU: [CallbackQueryHandler(menu_handler,
-                                    pass_user_data=True),],
-            MENU_CHOICE: [CallbackQueryHandler(menu_choice_handler,
                                     pass_user_data=True),],
             STARTPOINT: [MessageHandler(Filters.all, startpoint_handler,
                                     pass_user_data=True),],
@@ -113,14 +116,10 @@ def main():
                                     pass_user_data=True),],
             CARGO: [MessageHandler(Filters.all, cargo_handler,
                                     pass_user_data=True),],
-            CALENDAR: [CallbackQueryHandler(calendar_handler,
-                                    pass_user_data=True),],
             PRICE: [CallbackQueryHandler(price_handler,
                                     pass_user_data=True),],
             PAYMENT: [MessageHandler(Filters.all, payment_handler,
-                                    pass_user_data=True),],
-            CONFIRMATION: [CallbackQueryHandler(confirmation_handler,
-                                    pass_user_data=True),],
+                                    pass_user_data=True),]
         },
         fallbacks=[
             CommandHandler('cancel', cancel_handler),
