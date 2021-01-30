@@ -1,0 +1,5 @@
+__pycache__/
+telegram/
+.DS_STORE
+.env
+my.db
